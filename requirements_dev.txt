@@ -1,0 +1,6 @@
+numpy>=1.17.0
+pyqtgraph>=0.11.2
+PySide6>=6.0.0
+pyserial>=3.5
+black>=20.8b1
+twine>=3.3.0
