@@ -1,0 +1,9 @@
+__pycache__/
+
+# twine build folders
+/build/
+/dist/
+/wicope.egg-info/
+
+# editor files
+.vscode/
