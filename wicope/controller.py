@@ -34,9 +34,6 @@ class Controller:
         self.acquisition_thread = QThread()
         self.acquisition_worker.moveToThread(self.acquisition_thread)
         self.acquisition_thread.started.connect(self.acquisition_worker.run)
-        self.acquisition_worker.finished.connect(self.acquisition_thread.quit)
-        # self.acquisition_worker.finished.connect(self.acquisition_thread.deleteLater)
-        # self.acquisition_thread.finished.connect(self.acquisition_worker.deleteLater)
         self.acquisition_worker.data_ready.connect(self.data_ready_callback)
         self.acquisition_thread.start()
 
@@ -154,11 +151,14 @@ class Controller:
 
     def on_app_exit(self):
         print("exiting")
+        self.acquisition_worker.stop()
+        self.acquisition_thread.quit()
+        self.acquisition_thread.wait()
+        self.disconnect_device()
 
 
 class AcquisitionWorker(QObject):
 
-    finished = Signal()
     data_ready = Signal()
 
     def __init__(self, wait_condition, device, parent=None):
@@ -166,15 +166,22 @@ class AcquisitionWorker(QObject):
         self.wait_condition = wait_condition
         self.device = device
         self.mutex = QMutex()
+        self.is_running = False
 
     def run(self):
 
+            self.is_running = True
         while True:
             self.mutex.lock()
             self.wait_condition.wait(self.mutex)
             self.mutex.unlock()
 
+            if not self.is_running:
+                break
+
             self.data = self.device.acquire_single()
             self.data_ready.emit()
 
-        self.finished.emit()
+    def stop(self):
+        self.is_running = False
+        self.wait_condition.wakeAll()
